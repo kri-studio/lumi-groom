@@ -1,0 +1,74 @@
+name: Publish website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out website
+        uses: actions/checkout@v6
+      - name: Import the existing website once
+        env:
+          SITE_FOLDER: lumi
+          DOMAIN: lumi-groom.ru
+          SOURCE_COMMIT: 3c7e2a405fdfd1e17a6116f5e6415a45de294da1
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f index.html ]]; then exit 0; fi
+          source_dir="$RUNNER_TEMP/kri-studio-source"
+          git clone --filter=blob:none --no-checkout https://github.com/kri-studio/kri-studio.git "$source_dir"
+          git -C "$source_dir" sparse-checkout init --cone
+          git -C "$source_dir" sparse-checkout set "$SITE_FOLDER"
+          git -C "$source_dir" checkout --detach "$SOURCE_COMMIT"
+          cp -a "$source_dir/$SITE_FOLDER/." .
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+          domain = os.environ['DOMAIN']
+          index = Path('index.html')
+          html = index.read_text(encoding='utf-8-sig')
+          html = re.sub(r"<link\b(?=[^>]*\brel=[\"']canonical[\"'])[^>]*>\s*", '', html, flags=re.I)
+          html = re.sub(r"<meta\b(?=[^>]*\bproperty=[\"']og:url[\"'])[^>]*>\s*", '', html, flags=re.I)
+          html = html.replace('</head>', f'<link rel="canonical" href="https://{domain}/">\n<meta property="og:url" content="https://{domain}/">\n</head>', 1)
+          index.write_text(html, encoding='utf-8', newline='\n')
+          Path('CNAME').write_text(domain + '\n', encoding='ascii')
+          Path('.nojekyll').write_text('', encoding='ascii')
+          Path('robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: https://{domain}/sitemap.xml\n', encoding='utf-8')
+          Path('sitemap.xml').write_text(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://{domain}/</loc></url></urlset>\n', encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git commit -m "Import $DOMAIN from kri-studio source $SOURCE_COMMIT"
+          git push origin HEAD:main
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Package website
+        run: |
+          mkdir -p _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude '_site' --exclude 'README.md' ./ _site/
+          test -s _site/index.html
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
