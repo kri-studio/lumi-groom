@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preload" as="image" href="./assets/dog-turn-v2-poster.webp" />
   <title>LUMI · Студия груминга</title>
   <meta name="description" content="LUMI — камерная студия груминга. Спокойный уход, точная стрижка, SPA." />
   <style>
@@ -160,7 +161,10 @@
       background: #120e10;
     }
     .hero__media { position: absolute; inset: 0; z-index: 0; }
-    .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% 12%; }
+    .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .2s ease; }
+    .hero__canvas.is-ready { opacity: 1; }
+    .hero__hint[hidden] { display: none; }
     .hero__shade {
       position: absolute; inset: 0; z-index: 1; pointer-events: none;
       background:
@@ -182,7 +186,7 @@
       -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
       background: linear-gradient(90deg, rgba(0,0,0,.35), transparent);
     }
-    .hero__hit { position: absolute; inset: 0; z-index: 1; cursor: crosshair; touch-action: none; }
+    .hero__hit { position: absolute; inset: 0; z-index: 1; cursor: default; touch-action: pan-y; }
     .hero__content {
       position: relative; z-index: 2;
       min-height: 100vh; min-height: 100dvh;
@@ -618,7 +622,7 @@
 <meta property="og:url" content="https://lumi-groom.ru/">
 </head>
 <body>
-  <div class="loader" id="loader">
+  <div class="loader is-done" id="loader">
     <div class="loader__box">
       <div class="loader__bar"><div class="loader__fill" id="loaderFill"></div></div>
       <div class="loader__txt">Lumi · загрузка <span id="loaderPct">0%</span></div>
@@ -658,7 +662,7 @@
 
   <main id="top">
     <section class="hero" id="hero">
-      <div class="hero__media" aria-hidden="true"><canvas class="hero__canvas" id="canvas"></canvas></div>
+      <div class="hero__media" aria-hidden="true"><img class="hero__poster" src="./assets/dog-turn-v2-poster.webp" alt="" fetchpriority="high" /><canvas class="hero__canvas" id="canvas"></canvas></div>
       <div class="hero__shade" aria-hidden="true"></div>
       <div class="hero__hit" id="stage" title="Двигайте курсором"></div>
       <div class="hero__content">
@@ -679,7 +683,7 @@
           </div>
         </div>
       </div>
-      <div class="hero__hint">↔ курсор поворачивает голову</div>
+      <div class="hero__hint" hidden>↔ курсор поворачивает голову</div>
     </section>
 
     <section class="block" id="about">
@@ -935,10 +939,9 @@
     </div>
   </footer>
 
+  <script type="application/json" id="dog-turn-data">{"width": 752, "height": 416, "columns": 4, "rows": 4, "frames": 64, "center": 35, "atlases": ["./assets/dog-turn-v2-0.webp", "./assets/dog-turn-v2-1.webp", "./assets/dog-turn-v2-2.webp", "./assets/dog-turn-v2-3.webp"]}</script>
   <script>
     (function () {
-      const FRAME_COUNT = 240;
-      const path = (i) => './frames/frame_' + String(i).padStart(3, '0') + '.jpg';
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       /* nav */
@@ -1046,155 +1049,143 @@
         form.reset();
       });
 
-      /* look-at cursor: existing left-right video, dog pinned right */
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d', { alpha: false });
-      const stage = document.getElementById('stage');
-      const hero = document.getElementById('hero');
-      const loader = document.getElementById('loader');
-      const loaderFill = document.getElementById('loaderFill');
-      const loaderPct = document.getElementById('loaderPct');
+      /* A single left-to-right turn; every frame is decoded before interaction. */
+      (function dogTurn() {
+        const config = JSON.parse(document.getElementById('dog-turn-data').textContent);
+        const canvas = document.getElementById('canvas');
+        const hero = document.getElementById('hero');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const motion = matchMedia('(prefers-reduced-motion: reduce)');
+        const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
+        const hint = hero.querySelector('.hero__hint');
+        const images = [];
+        const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+        const rest = config.center / (config.frames - 1);
+        let current = rest, target = rest, raf = 0, previousTime = 0;
+        let ready = false, visible = true;
+        let width = 0, height = 0, drawWidth = 0, drawHeight = 0, left = 0, top = 0;
 
-      /* Фикс лагов: старт по «каркасу» (каждый 4-й кадр), остальные кадры докачиваются в фоне. */
-      const SKELETON_STEP = 4;
-      const frames = new Array(FRAME_COUNT);
-      const isLoaded = new Array(FRAME_COUNT).fill(false);
-      let loaded = 0, ready = false;
-      let target = (FRAME_COUNT - 1) * 0.55, current = target;
-      let lastDrawn = -1, lastTs = performance.now();
-      function nearestLoaded(idx) {
-        if (isLoaded[idx]) return idx;
-        for (let d = 1; d < FRAME_COUNT; d++) {
-          if (idx - d >= 0 && isLoaded[idx - d]) return idx - d;
-          if (idx + d < FRAME_COUNT && isLoaded[idx + d]) return idx + d;
+        // The poster makes the rest of the page usable even on a slow connection.
+        document.getElementById('loader')?.classList.add('is-done');
+        if (!ctx) return;
+
+        function canAnimate() {
+          return ready && visible && !document.hidden && !motion.matches && finePointer.matches;
         }
-        return -1;
-      }
-
-      function setLoader(p) {
-        const pct = Math.round(p * 100);
-        loaderFill.style.width = pct + '%';
-        loaderPct.textContent = pct + '%';
-      }
-
-      function coverDraw(img) {
-        const dpr = Math.min(devicePixelRatio || 1, 2);
-        const w = canvas.clientWidth || hero.clientWidth;
-        const h = canvas.clientHeight || hero.clientHeight;
-        const cw = Math.max(1, Math.round(w * dpr));
-        const ch = Math.max(1, Math.round(h * dpr));
-        if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-
-        // Full dog visible: plain cover (no extra zoom), slightly lower on screen
-        const scale = Math.max(cw / img.width, ch / img.height);
-        const dw = img.width * scale;
-        const dh = img.height * scale;
-        // mild horizontal bias only — do not crop the dog body
-        const dx = (cw - dw) * 0.55;
-        // 0 = top-align (dog lower), 1 = bottom-align (dog higher)
-        const dy = (ch - dh) * 0.12;
-
-        ctx.fillStyle = '#120e10';
-        ctx.fillRect(0, 0, cw, ch);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, dx, dy, dw, dh);
-      }
-
-      function draw(i) {
-        const want = Math.max(0, Math.min(FRAME_COUNT - 1, Math.round(i)));
-        const idx = nearestLoaded(want);
-        if (idx < 0) return;
-        const img = frames[idx];
-        if (!img || !img.complete || !img.naturalWidth) return;
-        if (idx === lastDrawn && canvas.width) return;
-        coverDraw(img);
-        lastDrawn = idx;
-      }
-
-      // Smooth pointer → target with low-pass filter (less jitter)
-      let pointerX = 0.55;
-      let smoothX = 0.55;
-      function setTargetFromClientX(clientX) {
-        const r = hero.getBoundingClientRect();
-        let x = (clientX - r.left) / r.width;
-        x = Math.min(0.97, Math.max(0.03, x));
-        pointerX = x;
-      }
-      function onMove(e) {
-        if (!ready) return;
-        const x = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
-        if (x == null) return;
-        setTargetFromClientX(x);
-      }
-      hero.addEventListener('pointermove', onMove, { passive: true });
-      stage.addEventListener('pointermove', onMove, { passive: true });
-      stage.addEventListener('pointerdown', onMove, { passive: true });
-      hero.addEventListener('pointerleave', () => { pointerX = 0.55; });
-
-      function tick(ts) {
-        const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
-        lastTs = ts;
-        if (ready) {
-          if (reduce) {
-            smoothX = pointerX;
-            current = pointerX * (FRAME_COUNT - 1);
-          } else {
-            // ступень 1: мягкое следование за курсором (убирает дрожь)
-            const follow = 1 - Math.exp(-6 * dt);
-            smoothX += (pointerX - smoothX) * follow;
-            const eased = smoothX * smoothX * (3 - 2 * smoothX);
-            target = eased * (FRAME_COUNT - 1);
-            // ступень 2: экспоненциальное сглаживание вместо «пружины» — без перелётов и дёрганий
-            const chase = 1 - Math.exp(-4.5 * dt);
-            current += (target - current) * chase;
-            if (Math.abs(target - current) < 0.02) current = target;
-          }
-          draw(current);
+        function schedule() {
+          if (!raf && canAnimate()) raf = requestAnimationFrame(tick);
         }
-        requestAnimationFrame(tick);
-      }
-
-      function preload() {
-        const order = [];
-        const mid = Math.floor((FRAME_COUNT - 1) * 0.55);
-        order.push(mid);
-        for (let i = 0; i < FRAME_COUNT; i += SKELETON_STEP) if (i !== mid) order.push(i);
-        const READY_AT = order.length; // маркер фикса: стартуем, как только загружен «каркас»
-        for (let i = 0; i < FRAME_COUNT; i++) if (!(i === mid || i % SKELETON_STEP === 0)) order.push(i);
-        let cursor = 0, inFlight = 0, resolved = false;
-        const concurrency = 16;
-        return new Promise((resolve) => {
-          function pump() { while (cursor < order.length && inFlight < concurrency) loadOne(order[cursor++]); }
-          function loadOne(i) {
-            inFlight++;
-            const img = new Image();
-            img.decoding = 'async';
-            const done = () => {
-              inFlight--; loaded++;
-              if (!resolved) setLoader(Math.min(1, loaded / READY_AT));
-              if (loaded === 1 && img.naturalWidth) coverDraw(img);
-              if (!resolved && loaded >= READY_AT) { resolved = true; resolve(); }
-              pump();
-            };
-            img.onload = () => { isLoaded[i] = true; done(); };
-            img.onerror = done;
-            img.src = path(i);
-            frames[i] = img;
+        function stop() {
+          cancelAnimationFrame(raf);
+          raf = 0;
+          previousTime = 0;
+        }
+        function resize() {
+          const r = hero.getBoundingClientRect();
+          const dpr = Math.min(devicePixelRatio || 1, 1.5);
+          width = Math.max(1, Math.round(r.width * dpr));
+          height = Math.max(1, Math.round(r.height * dpr));
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
           }
-          pump();
+          const scale = Math.max(width / config.width, height / config.height);
+          drawWidth = config.width * scale;
+          drawHeight = config.height * scale;
+          left = (width - drawWidth) * 0.55;
+          top = (height - drawHeight) * 0.12;
+          if (ready) draw();
+        }
+        function drawFrame(index) {
+          const perSheet = config.columns * config.rows;
+          const local = index % perSheet;
+          ctx.drawImage(images[Math.floor(index / perSheet)],
+            (local % config.columns) * config.width,
+            Math.floor(local / config.columns) * config.height,
+            config.width, config.height, left, top, drawWidth, drawHeight);
+        }
+        function draw() {
+          const position = clamp(current, 0, 1) * (config.frames - 1);
+          const a = Math.floor(position), b = Math.min(a + 1, config.frames - 1);
+          ctx.globalAlpha = 1;
+          drawFrame(a);
+          if (b !== a && position - a > 0.001) {
+            ctx.globalAlpha = position - a;
+            drawFrame(b);
+            ctx.globalAlpha = 1;
+          }
+        }
+        function tick(time) {
+          raf = 0;
+          if (!canAnimate()) { previousTime = 0; return; }
+          const dt = previousTime ? clamp((time - previousTime) / 1000, 0, 0.05) : 1 / 60;
+          previousTime = time;
+          const distance = target - current;
+          // Frame-rate independent easing, capped speed, no spring overshoot.
+          current += clamp(distance * (1 - Math.exp(-14 * dt)), -1.6 * dt, 1.6 * dt);
+          if (Math.abs(target - current) < 0.0001) current = target;
+          draw();
+          if (current !== target) schedule();
+          else previousTime = 0;
+        }
+        function move(event) {
+          if (!canAnimate() || event.pointerType === 'touch') return;
+          const r = hero.getBoundingClientRect();
+          target = clamp((event.clientX - r.left) / r.width, 0, 1);
+          schedule();
+        }
+        function reset() {
+          target = rest;
+          schedule();
+        }
+        function preferencesChanged() {
+          stop();
+          current = target = rest;
+          if (ready) draw();
+          if (hint) hint.hidden = !ready || motion.matches || !finePointer.matches;
+        }
+        hero.addEventListener('pointermove', move, { passive: true });
+        hero.addEventListener('pointerleave', reset, { passive: true });
+        addEventListener('resize', resize, { passive: true });
+        motion.addEventListener('change', preferencesChanged);
+        finePointer.addEventListener('change', preferencesChanged);
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) stop();
+          else schedule();
         });
-      }
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(entries => {
+            visible = entries[0].isIntersecting;
+            if (!visible) stop();
+            else schedule();
+          }).observe(hero);
+        }
+        resize();
+        if (hint) hint.hidden = true;
+        // Touch screens and reduced-motion visitors get the sharp static poster.
+        if (motion.matches || !finePointer.matches) return;
+        Promise.all(config.atlases.map(src => new Promise((resolve, reject) => {
+          const image = new Image();
+          image.decoding = 'async';
+          image.onload = async () => {
+            try { await image.decode(); resolve(image); } catch (error) { reject(error); }
+          };
+          image.onerror = reject;
+          image.src = src;
+        }))).then(decoded => {
+          images.push(...decoded);
+          ready = true;
+          current = target = rest;
+          resize();
+          canvas.classList.add('is-ready');
+          preferencesChanged();
+        }).catch(() => {
+          // Keep the poster if any sheet is unavailable; never skip missing poses.
+          ready = false;
+          stop();
+        });
+      })();
 
-      preload().then(() => {
-        ready = true;
-        loader.classList.add('is-done');
-        lastDrawn = -1;
-        current = target = (FRAME_COUNT - 1) * 0.55;
-        draw(current);
-        addEventListener('resize', () => { lastDrawn = -1; draw(current); });
-      });
-      requestAnimationFrame(tick);
     })();
   </script>
 </body>
