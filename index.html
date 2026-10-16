@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preload" as="image" href="./frames/frame_199.jpg" />
+  <link rel="preload" as="image" href="./assets/dog-hd-v4-poster.webp" />
   <title>LUMI · Студия груминга</title>
   <meta name="description" content="LUMI — камерная студия груминга. Спокойный уход, точная стрижка, SPA." />
   <style>
@@ -161,7 +161,7 @@
       background: #120e10;
     }
     .hero__media { position: absolute; inset: 0; z-index: 0; }
-    .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 55% 12%; }
+    .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 55% 12%; }
     .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .2s ease; }
     .hero__canvas.is-ready { opacity: 1; }
     .hero__hint[hidden] { display: none; }
@@ -662,7 +662,7 @@
 
   <main id="top">
     <section class="hero" id="hero">
-      <div class="hero__media" aria-hidden="true"><img class="hero__poster" src="./frames/frame_199.jpg" alt="" fetchpriority="high" /><canvas class="hero__canvas" id="canvas"></canvas></div>
+      <div class="hero__media" aria-hidden="true"><img class="hero__poster" src="./assets/dog-hd-v4-poster.webp" alt="" fetchpriority="high" /><canvas class="hero__canvas" id="canvas"></canvas></div>
       <div class="hero__shade" aria-hidden="true"></div>
       <div class="hero__hit" id="stage" title="Двигайте курсором"></div>
       <div class="hero__content">
@@ -683,7 +683,7 @@
           </div>
         </div>
       </div>
-      <div class="hero__hint" hidden>↔ курсор поворачивает голову</div>
+      <div class="hero__hint" hidden>↔ ↕ собака следит за курсором</div>
     </section>
 
     <section class="block" id="about">
@@ -939,7 +939,7 @@
     </div>
   </footer>
 
-  <script type="application/json" id="dog-turn-data">{"width":1280,"height":756,"center":21,"noseX":810,"sources":["./frames/frame_220.jpg","./frames/frame_219.jpg","./frames/frame_218.jpg","./frames/frame_217.jpg","./frames/frame_216.jpg","./frames/frame_215.jpg","./frames/frame_214.jpg","./frames/frame_213.jpg","./frames/frame_212.jpg","./frames/frame_211.jpg","./frames/frame_210.jpg","./frames/frame_209.jpg","./frames/frame_208.jpg","./frames/frame_207.jpg","./frames/frame_206.jpg","./frames/frame_205.jpg","./frames/frame_204.jpg","./frames/frame_203.jpg","./frames/frame_202.jpg","./frames/frame_201.jpg","./frames/frame_200.jpg","./frames/frame_199.jpg","./frames/frame_198.jpg","./frames/frame_197.jpg","./frames/frame_196.jpg","./frames/frame_195.jpg","./frames/frame_194.jpg","./frames/frame_193.jpg","./frames/frame_192.jpg"],"angles":[[-1,0],[-0.85,4],[-0.62,8],[-0.39,12],[-0.22,16],[-0.1,19],[0,21],[0.12,22],[0.3,23],[0.48,24],[0.63,25],[0.78,26],[0.9,27],[1,28]]}</script>
+  <script type="application/json" id="dog-turn-data">{"version":4,"width":1280,"height":720,"nose":[650,310],"poster":"./assets/dog-hd-v4-poster.webp","patch":[460,125,410,395],"columns":4,"branches":{"left":{"src":"./assets/dog-hd-v4-left.webp","count":27,"unsafe":[8,9,10,11,12]},"right":{"src":"./assets/dog-hd-v4-right.webp","count":27,"unsafe":[18,19,20,21,22]},"up":{"src":"./assets/dog-hd-v4-up.webp","count":32,"unsafe":[]},"down":{"src":"./assets/dog-hd-v4-down.webp","count":20,"unsafe":[]}}}</script>
   <script>
     (function () {
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1049,151 +1049,153 @@
         form.reset();
       });
 
-      /* Original full-resolution frames from one continuous head turn. */
+      /* HD head poses on a stationary scene, with smooth four-direction tracking. */
       (function dogTurn() {
         const config = JSON.parse(document.getElementById('dog-turn-data').textContent);
         const canvas = document.getElementById('canvas');
         const hero = document.getElementById('hero');
+        const poster = hero.querySelector('.hero__poster');
+        const hint = hero.querySelector('.hero__hint');
         const ctx = canvas.getContext('2d', { alpha: false });
         const motion = matchMedia('(prefers-reduced-motion: reduce)');
         const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
-        const hint = hero.querySelector('.hero__hint');
-        const frames = [];
         const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-        let current = config.center, target = current, raf = 0, previousTime = 0;
-        let ready = false, loading = false, visible = true, lastDrawn = -1;
-        let drawWidth = 0, drawHeight = 0, left = 0, top = 0, noseX = 0;
+        const sheets = {};
+        let active = 'left', requested = active, position = 0, target = 0;
+        let ready = false, loading = false, visible = true, raf = 0, previousTime = 0;
+        let scale = 1, left = 0, top = 0, noseX = 0, noseY = 0, lastDrawn = '';
+        let lastPointer = null;
         document.getElementById('loader')?.classList.add('is-done');
         if (!ctx) return;
 
-        function canAnimate() {
-          return ready && visible && !document.hidden && !motion.matches && finePointer.matches;
-        }
+        function allowed() { return !motion.matches && finePointer.matches; }
+        function canAnimate() { return ready && visible && !document.hidden && allowed(); }
+        function pending() { return position !== target || active !== requested; }
         function schedule() {
-          if (!raf && canAnimate() && current !== target) raf = requestAnimationFrame(tick);
+          if (!raf && canAnimate() && pending()) raf = requestAnimationFrame(tick);
         }
-        function stop() {
-          cancelAnimationFrame(raf);
-          raf = 0;
-          previousTime = 0;
-        }
+        function stop() { cancelAnimationFrame(raf); raf = 0; previousTime = 0; }
         function resize() {
           const r = hero.getBoundingClientRect();
           const dpr = Math.min(devicePixelRatio || 1, 2);
           canvas.width = Math.max(1, Math.round(r.width * dpr));
           canvas.height = Math.max(1, Math.round(r.height * dpr));
-          const scale = Math.max(canvas.width / config.width, canvas.height / config.height);
-          drawWidth = config.width * scale;
-          drawHeight = config.height * scale;
-          left = (canvas.width - drawWidth) * 0.55;
-          top = (canvas.height - drawHeight) * 0.12;
-          noseX = (left + config.noseX * scale) / dpr;
-          lastDrawn = -1;
+          scale = Math.max(canvas.width / config.width, canvas.height / config.height);
+          const width = config.width * scale, height = config.height * scale;
+          // Keep the dog clear of the heading on wide screens and centred on phones.
+          const anchor = r.width > 900 ? .68 : .51;
+          left = canvas.width * anchor - config.nose[0] * scale;
+          top = (canvas.height - height) * .12;
+          noseX = (left + config.nose[0] * scale) / dpr;
+          noseY = (top + config.nose[1] * scale) / dpr;
+          Object.assign(poster.style, { width: width / dpr + 'px', height: height / dpr + 'px',
+            left: left / dpr + 'px', top: top / dpr + 'px', objectFit: 'fill' });
+          lastDrawn = '';
           if (ready) draw();
+          if (lastPointer) aim(lastPointer);
         }
         function draw() {
-          const index = clamp(Math.round(current), 0, frames.length - 1);
-          if (index === lastDrawn) return;
-          // No optical-flow warping, upscaled video, or cross-fading of faces.
-          ctx.drawImage(frames[index], left, top, drawWidth, drawHeight);
-          lastDrawn = index;
+          const branch = config.branches[active];
+          const index = clamp(Math.round(position * (branch.count - 1)), 0, branch.count - 1);
+          const key = index === 0 ? 'neutral' : active + ':' + index;
+          if (key === lastDrawn) return;
+          ctx.fillStyle = '#120e10'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(poster, left, top, config.width * scale, config.height * scale);
+          if (index > 0) {
+            const [x, y, w, h] = config.patch;
+            ctx.drawImage(sheets[active], index % config.columns * w,
+              Math.floor(index / config.columns) * h, w, h,
+              left + x * scale, top + y * scale, w * scale, h * scale);
+          }
+          canvas.dataset.direction = index === 0 ? 'neutral' : active;
+          canvas.dataset.pose = String(index);
+          lastDrawn = key;
         }
         function tick(time) {
           raf = 0;
           if (!canAnimate()) { previousTime = 0; return; }
-          const dt = previousTime ? clamp((time - previousTime) / 1000, 0, 0.04) : 1 / 120;
+          const dt = previousTime ? clamp((time - previousTime) / 1000, 0, .04) : 1 / 120;
           previousTime = time;
-          const distance = target - current;
-          current += clamp(distance * (1 - Math.exp(-24 * dt)), -100 * dt, 100 * dt);
-          if (Math.abs(target - current) < 0.015) current = target;
+          const goal = active === requested ? target : 0;
+          const distance = goal - position;
+          position += clamp(distance * (1 - Math.exp(-20 * dt)), -4 * dt, 4 * dt);
+          if (Math.abs(goal - position) < .003) position = goal;
           draw();
-          if (current !== target) schedule();
-          else previousTime = 0;
+          // Different video branches meet only at their identical frontal frame.
+          if (position === 0 && active !== requested) active = requested;
+          if (pending()) schedule(); else previousTime = 0;
         }
-        function poseForAngle(angle) {
-          const keys = config.angles;
-          for (let i = 1; i < keys.length; i++) {
-            if (angle <= keys[i][0]) {
-              const a = keys[i - 1], b = keys[i];
-              return a[1] + (b[1] - a[1]) * ((angle - a[0]) / (b[0] - a[0]));
+        function openEyeTarget(branch, value) {
+          const data = config.branches[branch];
+          let index = Math.round(value * (data.count - 1));
+          if (data.unsafe.includes(index)) {
+            for (let offset = 1; offset < data.count; offset++) {
+              if (index - offset >= 0 && !data.unsafe.includes(index - offset)) { index -= offset; break; }
+              if (index + offset < data.count && !data.unsafe.includes(index + offset)) { index += offset; break; }
             }
           }
-          return keys[keys.length - 1][1];
+          return index / (data.count - 1);
+        }
+        function aim(event) {
+          if (!allowed() || event.pointerType === 'touch') return;
+          const r = hero.getBoundingClientRect();
+          const dx = event.clientX - r.left - noseX, dy = event.clientY - r.top - noseY;
+          const x = clamp(dx / Math.max(80, dx < 0 ? noseX : r.width - noseX), -1, 1);
+          const y = clamp(dy / Math.max(80, dy < 0 ? noseY : r.height - noseY), -1, 1);
+          const horizontal = x < 0 ? 'left' : 'right', vertical = y < 0 ? 'up' : 'down';
+          const ax = Math.abs(x), ay = Math.abs(y);
+          if (Math.max(ax, ay) < .045) { target = 0; schedule(); return; }
+          // Hysteresis keeps diagonal cursor movement from switching axes repeatedly.
+          const wasHorizontal = requested === 'left' || requested === 'right';
+          const useHorizontal = wasHorizontal ? ax * 1.2 >= ay : ax > ay * 1.2;
+          requested = useHorizontal ? horizontal : vertical;
+          const amount = clamp(((useHorizontal ? ax : ay) - .045) / .955, 0, 1);
+          target = openEyeTarget(requested, amount);
+          schedule();
         }
         function move(event) {
-          if (!canAnimate() || event.pointerType === 'touch') return;
-          const r = hero.getBoundingClientRect();
-          const offset = event.clientX - r.left - noseX;
-          const reach = offset < 0 ? noseX : r.width - noseX;
-          const angle = clamp(offset / Math.max(1, reach), -1, 1);
-          target = Math.round(poseForAngle(angle));
-          // A natural blink can play during a turn, but must never freeze closed.
-          if (target >= 25 && target <= 27) target = target < 26 ? 24 : 28;
-          schedule();
+          if (event.pointerType === 'touch') return;
+          lastPointer = { clientX: event.clientX, clientY: event.clientY, pointerType: event.pointerType };
+          aim(lastPointer);
         }
-        function reset() {
-          target = config.center;
-          schedule();
-        }
+        function reset() { lastPointer = null; target = 0; schedule(); }
         function preferencesChanged() {
-          stop();
-          current = target = config.center;
+          stop(); position = target = 0; requested = active;
           if (ready) draw();
-          if (hint) hint.hidden = !ready || motion.matches || !finePointer.matches;
-          if (!motion.matches && finePointer.matches) preload();
+          if (hint) hint.hidden = !ready || !allowed();
+          if (allowed()) preload();
         }
         async function preload() {
-          if (ready || loading) return;
+          if (ready || loading || !allowed()) return;
           loading = true;
           try {
-            const decoded = new Array(config.sources.length);
-            let cursor = 0;
-            async function worker() {
-              while (cursor < config.sources.length) {
-                const index = cursor++;
-                const image = new Image();
-                image.decoding = 'async';
-                await new Promise((resolve, reject) => {
-                  image.onload = resolve;
-                  image.onerror = reject;
-                  image.src = config.sources[index];
-                });
-                await image.decode();
-                decoded[index] = image;
-              }
-            }
-            await Promise.all(Array.from({ length: 6 }, worker));
-            frames.push(...decoded);
-            ready = true;
-            current = target = config.center;
-            resize();
+            await poster.decode();
+            await Promise.all(Object.entries(config.branches).map(async ([name, branch]) => {
+              const image = new Image(); image.decoding = 'async'; image.src = branch.src;
+              await image.decode(); sheets[name] = image;
+            }));
+            ready = true; resize(); draw();
             canvas.classList.add('is-ready');
-            if (hint) hint.hidden = motion.matches || !finePointer.matches;
-          } catch (_) {
-            stop();
-          } finally {
-            loading = false;
-          }
+            if (hint) hint.hidden = !allowed();
+            if (lastPointer) aim(lastPointer);
+          } catch (_) { stop(); } finally { loading = false; }
         }
         hero.addEventListener('pointermove', move, { passive: true });
         hero.addEventListener('pointerleave', reset, { passive: true });
+        hero.addEventListener('pointerenter', preload, { passive: true });
         addEventListener('resize', resize, { passive: true });
         motion.addEventListener('change', preferencesChanged);
         finePointer.addEventListener('change', preferencesChanged);
         document.addEventListener('visibilitychange', () => {
-          if (document.hidden) stop();
-          else schedule();
+          if (document.hidden) { stop(); reset(); } else schedule();
         });
         if ('IntersectionObserver' in window) {
           new IntersectionObserver(entries => {
             visible = entries[0].isIntersecting;
-            if (!visible) stop();
-            else schedule();
+            if (!visible) { stop(); reset(); } else schedule();
           }).observe(hero);
         }
-        resize();
-        if (hint) hint.hidden = true;
-        if (!motion.matches && finePointer.matches) preload();
+        resize(); if (hint) hint.hidden = true; preload();
       })();
 
     })();
