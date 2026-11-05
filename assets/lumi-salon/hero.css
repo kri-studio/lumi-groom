@@ -28,3 +28,17 @@
 .lumi-intro-active{overflow:hidden}.lumi-intro-active body> :not(.lumi-intro):not(script){pointer-events:none}
 @media(max-width:600px){.svc__top{flex-wrap:wrap}.contact>*,.field,.form-row{min-width:0}.field input,.field select,.field textarea{min-width:0;width:100%}.contact-info .lines strong{overflow-wrap:anywhere}.contact-info,.form-card{padding:22px}.form-card .btn{padding-inline:12px;font-size:14px}}
 @media(prefers-reduced-motion:reduce){.lumi-intro{display:none}.lumi-hero *,.lumi-header *{transition:none!important}}
+
+/* Keep the opening aligned with the existing section grid. */
+@media(min-width:801px){
+  .lumi-header{padding-inline:var(--gutter)}
+  .lumi-hero{max-width:none;min-height:650px;height:min(820px,calc(100svh - 122px))}
+  .lumi-copy{padding-left:calc(var(--gutter) - 16px);padding-top:clamp(72px,8vh,96px)}
+  .lumi-hero-bottom{left:calc(var(--gutter) - 16px);right:calc(var(--gutter) - 16px)}
+  .lumi-qualities{padding-inline:var(--gutter)}
+}
+@media(min-width:801px) and (max-width:1100px){
+  .lumi-header{gap:24px}.lumi-navigation{gap:18px}
+  .lumi-hero{height:min(820px,calc(100svh - 112px))}
+}
+@media(min-width:1500px){.lumi-hero{min-height:720px}}
