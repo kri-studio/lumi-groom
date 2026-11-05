@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preload" as="image" href="./assets/dog-hd-v4-poster.webp" />
+  <link rel="preload" as="image" href="./assets/lumi-salon/salon-poster.jpg" />
   <title>LUMI · Студия груминга</title>
   <meta name="description" content="LUMI — камерная студия груминга. Спокойный уход, точная стрижка, SPA." />
   <style>
@@ -65,41 +65,9 @@
       :root { --paw-space: clamp(48px, 12vw, 72px); }
     }
 
-    /* NAV light */
-    .nav {
-      position: fixed; inset: 0 0 auto 0; z-index: 40;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 20px; width: 100%;
-      padding: 16px var(--gutter);
-      transition: .25s ease;
-      border-bottom: 1px solid transparent;
-    }
-    .nav.is-solid {
-      background: rgba(255, 248, 251, 0.92);
-      backdrop-filter: blur(14px);
-      border-bottom-color: var(--line);
-      box-shadow: 0 8px 24px rgba(255, 79, 152, 0.06);
-    }
-    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; }
-    .brand__logo {
-      width: 52px; height: 52px; object-fit: contain;
-      display: none;
-    }
-    /* Dark logo on light UI; white logo over dark hero */
-    .brand__logo--dark { display: block; }
-    .brand__logo--light { display: none; }
-    .nav:not(.is-solid) .brand { color: #fff; }
-    .nav:not(.is-solid) .brand__logo--dark { display: none; }
-    .nav:not(.is-solid) .brand__logo--light { display: block; }
-    .nav:not(.is-solid) .nav__links a { color: rgba(255,255,255,.78); }
-    .nav:not(.is-solid) .nav__links a:hover { color: #fff; background: rgba(255,255,255,.1); }
-    .nav:not(.is-solid) .nav__burger { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.22); }
-    .nav:not(.is-solid) .nav__burger span { background: #fff; }
-    .nav__links { display: none; gap: 4px; }
-    .nav__links a {
-      padding: 12px 14px; border-radius: 999px; font-size: 16px; font-weight: 600; color: var(--muted);
-    }
-    .nav__links a:hover { color: var(--ink); background: var(--pink-soft); }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; font-size:22px; letter-spacing:-.03em; }
+    .brand__logo { width:52px; height:52px; object-fit:contain; }
+    .brand__logo--light { display:none; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 10px;
       min-height: 52px; padding: 0 24px; border-radius: 999px;
@@ -118,139 +86,6 @@
       color: var(--ink);
       border: 1px solid var(--line);
     }
-    .nav__cta { display: none; }
-    .nav__burger {
-      width: 48px; height: 48px; border-radius: 14px;
-      border: 1px solid var(--line); background: #fff;
-      display: grid; place-items: center; gap: 5px;
-    }
-    .nav__burger span { width: 18px; height: 2px; background: var(--ink); display: block; }
-    @media (min-width: 920px) {
-      .nav__links, .nav__cta { display: flex; }
-      .nav__burger { display: none; }
-    }
-    .drawer {
-      position: fixed; inset: 0; z-index: 50; background: rgba(31,26,28,.35);
-      opacity: 0; pointer-events: none; transition: .25s ease;
-    }
-    .drawer.is-open { opacity: 1; pointer-events: auto; }
-    .drawer__panel {
-      position: absolute; top: 0; right: 0; width: min(340px, 90vw); height: 100%;
-      background: #fff; padding: 92px 22px 24px;
-      display: flex; flex-direction: column; gap: 6px;
-      border-left: 1px solid var(--line);
-    }
-    .drawer a { padding: 14px 12px; border-radius: 14px; font-size: 18px; font-weight: 650; }
-    .drawer a:hover { background: var(--pink-soft); }
-
-    .loader {
-      position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
-      background: var(--bg); transition: opacity .5s ease, visibility .5s ease;
-    }
-    .loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
-    .loader__box { width: min(300px, 82vw); text-align: center; }
-    .loader__bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; }
-    .loader__fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--pink), #ffc2dc); transition: width .12s linear; }
-    .loader__txt { margin-top: 14px; font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
-
-    /* HERO */
-    .hero {
-      position: relative;
-      min-height: 100vh; min-height: 100dvh;
-      overflow: hidden;
-      background: #120e10;
-    }
-    .hero__media { position: absolute; inset: 0; z-index: 0; }
-    .hero__poster { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 55% 12%; }
-    .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .2s ease; }
-    .hero__canvas.is-ready { opacity: 1; }
-    .hero__hint[hidden] { display: none; }
-    .hero__shade {
-      position: absolute; inset: 0; z-index: 1; pointer-events: none;
-      background:
-        linear-gradient(90deg,
-          rgba(18,14,16,.96) 0%,
-          rgba(18,14,16,.9) 20%,
-          rgba(18,14,16,.62) 38%,
-          rgba(18,14,16,.22) 54%,
-          rgba(18,14,16,.05) 66%,
-          transparent 80%);
-    }
-    .hero__shade::after {
-      content: "";
-      position: absolute; inset: 0 auto 0 0;
-      width: min(52vw, 680px);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
-      -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 40%, transparent 100%);
-      background: linear-gradient(90deg, rgba(0,0,0,.35), transparent);
-    }
-    .hero__hit { position: absolute; inset: 0; z-index: 1; cursor: default; touch-action: pan-y; }
-    .hero__content {
-      position: relative; z-index: 2;
-      min-height: 100vh; min-height: 100dvh;
-      display: flex; align-items: center;
-      padding: 120px var(--gutter) 80px;
-      pointer-events: none;
-    }
-    .hero__content .wrap { width: 100%; max-width: none; margin: 0; pointer-events: none; padding: 0; }
-    .hero__copy { max-width: min(560px, 46vw); pointer-events: auto; color: #fff; }
-    @media (max-width: 900px) {
-      .hero__copy { max-width: 92vw; }
-      .hero__shade {
-        background: linear-gradient(180deg, rgba(18,14,16,.45) 0%, rgba(18,14,16,.2) 35%, rgba(18,14,16,.75) 70%, rgba(18,14,16,.94) 100%);
-      }
-      .hero__shade::after {
-        width: 100%;
-        mask-image: linear-gradient(180deg, transparent, #000 60%);
-        -webkit-mask-image: linear-gradient(180deg, transparent, #000 60%);
-      }
-      .hero__content { align-items: flex-end; padding-bottom: 96px; }
-    }
-    .pill {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 14px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-      color: #ffd0e4; background: rgba(255,79,152,.2);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 999px; padding: 10px 14px; margin-bottom: 20px;
-    }
-    .hero h1 {
-      font-size: clamp(52px, 7.5vw, 86px);
-      font-weight: 850; letter-spacing: -0.05em; line-height: 0.96;
-      margin-bottom: 20px;
-    }
-    .hero h1 span {
-      background: linear-gradient(135deg, #fff, #ffb0d2);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .hero__lead {
-      font-size: clamp(18px, 2vw, 22px);
-      line-height: 1.55; color: rgba(255,255,255,.84);
-      max-width: 34ch; margin-bottom: 30px;
-    }
-    .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 32px; }
-    .hero__actions .btn { min-height: 56px; font-size: 17px; padding: 0 26px; }
-    .hero__meta {
-      display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 12px; max-width: 500px;
-    }
-    .hero__meta div {
-      padding: 16px 14px; border-radius: 18px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(10px);
-    }
-    .hero__meta strong { display: block; font-size: 26px; letter-spacing: -0.03em; margin-bottom: 4px; }
-    .hero__meta span { font-size: 14px; color: rgba(255,255,255,.65); font-weight: 650; }
-    .hero__hint {
-      position: absolute; right: var(--gutter); bottom: 28px; z-index: 3;
-      padding: 12px 16px; border-radius: 999px;
-      background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.14);
-      color: rgba(255,255,255,.85); font-size: 14px; font-weight: 700;
-      pointer-events: none;
-    }
-
     /* LIGHT SECTIONS */
     section.block { width: 100%; padding: clamp(88px, 11vw, 130px) 0; position: relative; z-index: 2; }
     .block--soft { background: var(--bg-2); }
@@ -624,72 +459,92 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20261017">
   <link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg?v=20261017">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261017">
+  <link rel="stylesheet" href="assets/lumi-salon/hero.css?v=1">
 </head>
 <body>
-  <div class="loader is-done" id="loader">
-    <div class="loader__box">
-      <div class="loader__bar"><div class="loader__fill" id="loaderFill"></div></div>
-      <div class="loader__txt">Lumi · загрузка <span id="loaderPct">0%</span></div>
+
+  <div class="lumi-intro" id="lumi-intro" hidden>
+    <div class="lumi-intro-inner">
+      <div class="lumi-intro-mark" aria-hidden="true">LUMI<span>СТУДИЯ ГРУМИНГА</span></div>
+      <div class="lumi-intro-scene" aria-hidden="true"><video id="lumi-intro-video" muted playsinline loop preload="auto" poster="assets/lumi-salon/intro-poster.jpg"><source src="assets/lumi-salon/intro.mp4" type="video/mp4"></video></div>
+      <p class="lumi-intro-caption" role="status">Сейчас будет красиво<span aria-hidden="true">…</span></p>
+      <button class="lumi-intro-skip" type="button">Перейти на сайт <span aria-hidden="true">↗</span></button>
     </div>
   </div>
+  <script>
+    (() => {
+      const intro = document.getElementById('lumi-intro');
+      const clip = document.getElementById('lumi-intro-video');
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches || location.hash) return;
+      let seen = false;
+      try { seen = sessionStorage.getItem('lumi-intro-seen') === '1'; } catch (_) {}
+      if (seen) return;
+      intro.hidden = false;
+      document.documentElement.classList.add('lumi-intro-active');
+      const started = performance.now();
+      let finished = false;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        try { sessionStorage.setItem('lumi-intro-seen', '1'); } catch (_) {}
+        document.documentElement.classList.remove('lumi-intro-active');
+        intro.classList.add('is-leaving');
+        const hadFocus = intro.contains(document.activeElement);
+        setTimeout(() => { intro.hidden = true; clip.pause(); if (hadFocus) document.querySelector('.lumi-brand')?.focus({preventScroll:true}); }, 500);
+      }
+      intro.querySelector('button').addEventListener('click', finish);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') finish(); });
+      intro.addEventListener('keydown', e => { if (e.key === 'Tab' && !finished) { e.preventDefault(); intro.querySelector('button').focus(); } });
+      setTimeout(finish, 4800);
+      clip.addEventListener('error', finish, {once:true});
+      clip.querySelector('source').addEventListener('error', finish, {once:true});
+      clip.play().catch(finish);
+      window.addEventListener('load', () => {
+        setTimeout(finish, Math.max(0, 2800 - (performance.now() - started)));
+      }, {once:true});
+      window.addEventListener('pageshow', e => { if (e.persisted) finish(); });
+    })();
+  </script>
 
   <div class="paw-rail paw-rail--l" id="railL" aria-hidden="true"></div>
   <div class="paw-rail paw-rail--r" id="railR" aria-hidden="true"></div>
 
-  <header class="nav" id="nav">
-    <a class="brand" href="#top">
-      <img class="brand__logo brand__logo--dark" src="./assets/logo-dark.png" alt="LUMI" width="52" height="52" />
-      <img class="brand__logo brand__logo--light" src="./assets/logo-light.png" alt="" width="52" height="52" aria-hidden="true" />
-      LUMI
-    </a>
-    <nav class="nav__links" aria-label="Навигация">
+  <svg class="lumi-icons" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="heart" viewBox="0 0 24 24"><path d="M20 5a5.3 5.3 0 0 0-8 1 5.3 5.3 0 0 0-8-1C1 8 3 13 12 20c9-7 11-12 8-15Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="paw" viewBox="0 0 32 32"><ellipse cx="7" cy="11" rx="3.4" ry="4.7" transform="rotate(-27 7 11)"/><ellipse cx="15" cy="6.5" rx="3.4" ry="4.7" transform="rotate(-7 15 6.5)"/><ellipse cx="24" cy="9.5" rx="3.4" ry="4.7" transform="rotate(24 24 9.5)"/><path d="M7 24c-2-4 4-12 9-12s12 9 9 13c-2 3-5 1-9 1-4 0-7 1-9-2Z"/></symbol>
+  </defs></svg>
+  <a class="lumi-skip" href="#hero">Перейти к первому экрану</a>
+  <header class="lumi-header">
+    <a class="lumi-brand" href="#top" aria-label="LUMI — на главную"><img src="assets/lumi-salon/logo-dark.png" alt="" width="50" height="54"><span>LUMI<small>СТУДИЯ ГРУМИНГА</small></span></a>
+    <nav class="lumi-navigation" id="navigation" aria-label="Основное меню">
       <a href="#about">О студии</a>
       <a href="#services">Услуги</a>
       <a href="#gallery">Галерея</a>
       <a href="#prices">Цены</a>
-      <a href="#contact">Контакты</a>
     </nav>
-    <a class="btn btn--primary nav__cta" href="#contact">Записаться</a>
-    <button class="nav__burger" id="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span><span></span></button>
+    <a class="lumi-button lumi-header-booking" href="#contact">Записаться <svg><use href="#arrow"/></svg></a>
+    <button class="lumi-menu-button" aria-label="Открыть меню" aria-controls="navigation" aria-expanded="false"><span></span><span></span></button>
   </header>
 
-  <div class="drawer" id="drawer" hidden>
-    <div class="drawer__panel">
-      <a href="#about">О студии</a>
-      <a href="#services">Услуги</a>
-      <a href="#gallery">Галерея</a>
-      <a href="#prices">Цены</a>
-      <a href="#contact">Контакты</a>
-      <a class="btn btn--primary" href="#contact" style="margin-top:16px">Записаться</a>
-    </div>
-  </div>
-
   <main id="top">
-    <section class="hero" id="hero">
-      <div class="hero__media" aria-hidden="true"><img class="hero__poster" src="./assets/dog-hd-v4-poster.webp" alt="" fetchpriority="high" /><canvas class="hero__canvas" id="canvas"></canvas></div>
-      <div class="hero__shade" aria-hidden="true"></div>
-      <div class="hero__hit" id="stage" title="Двигайте курсором"></div>
-      <div class="hero__content">
-        <div class="wrap">
-          <div class="hero__copy">
-            <div class="pill">Студия груминга · 1 питомец = 1 мастер</div>
-            <h1>Спокойный<br />уход.<br /><span>Точная<br />форма.</span></h1>
-            <p class="hero__lead">LUMI — камерная студия для собак и кошек. Без конвейера, с мягкой косметикой и стрижкой под характер.</p>
-            <div class="hero__actions">
-              <a class="btn btn--primary" href="#contact">Записать питомца</a>
-              <a class="btn btn--ghost" href="#services" style="border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff">Смотреть услуги</a>
-            </div>
-            <div class="hero__meta">
-              <div><strong>1:1</strong><span>слот без очереди</span></div>
-              <div><strong>10–20</strong><span>ежедневно</span></div>
-              <div><strong>S–M</strong><span>основной фокус</span></div>
-            </div>
-          </div>
-        </div>
+    <div class="lumi-opening">
+    <section class="lumi-hero" id="hero" aria-labelledby="hero-title">
+      <div class="lumi-scene"><img class="lumi-poster" src="assets/lumi-salon/salon-poster.jpg" alt="Пушистый рыжий шпиц в розовом вязаном жилете стоит на столе в светлом груминг-салоне" width="1280" height="720" fetchpriority="high"><video class="lumi-hero-video" muted playsinline preload="auto" poster="assets/lumi-salon/salon-poster.jpg" aria-hidden="true"><source src="assets/lumi-salon/salon-motion.mp4" type="video/mp4"></video></div>
+      <div class="lumi-shade"></div>
+      <div class="lumi-copy">
+        <div class="lumi-eyebrow"><span class="lumi-dot"></span> КАМЕРНАЯ СТУДИЯ ГРУМИНГА</div>
+        <h1 id="hero-title">Спокойный уход.<br><span>Точная форма.</span></h1>
+        <p>Красиво — когда комфортно.<br>Мягкая косметика, бережные руки<br>и стрижка под характер вашего питомца.</p>
+        <div class="lumi-actions"><a class="lumi-button lumi-main-booking" href="#contact">Записать питомца <svg><use href="#arrow"/></svg></a><a class="lumi-services-link" href="#services">Смотреть услуги <span>↗</span></a></div>
+        <div class="lumi-care-note"><svg><use href="#heart"/></svg><span>Один питомец. Один мастер.<br><b>Всё внимание — вашему хвостику.</b></span></div>
       </div>
-      <div class="hero__hint" hidden>↔ ↕ собака следит за курсором</div>
+      <div class="lumi-sticker"><svg><use href="#paw"/></svg><span>Хорошо выглядеть.<br><strong>Ещё лучше — чувствовать.</strong></span></div>
+      <div class="lumi-hero-bottom"><span class="lumi-bottom-caption"><span class="lumi-caption-line"></span> С ЗАБОТОЙ О КАЖДОЙ ЛАПКЕ</span><button class="lumi-motion-toggle" aria-label="Остановить анимацию" aria-pressed="true"><span class="lumi-motion-icon" aria-hidden="true">Ⅱ</span><span class="lumi-motion-label">Живой момент</span></button></div>
     </section>
+    <div class="lumi-qualities" aria-label="Подход LUMI"><div><span class="lumi-quality-number">01</span><span>Без конвейера</span></div><svg class="lumi-separator"><use href="#paw"/></svg><div><span class="lumi-quality-number">02</span><span>В спокойном темпе</span></div><svg class="lumi-separator"><use href="#paw"/></svg><div><span class="lumi-quality-number">03</span><span>С любовью к деталям</span></div><span class="lumi-hours">ЕЖЕДНЕВНО · 10:00–20:00</span></div>
 
+    </div>
     <section class="block" id="about">
       <div class="wrap about-grid">
         <div class="about-card reveal">
@@ -943,26 +798,9 @@
     </div>
   </footer>
 
-  <script type="application/json" id="dog-turn-data">{"version":4,"width":1280,"height":720,"nose":[650,310],"poster":"./assets/dog-hd-v4-poster.webp","patch":[460,125,410,395],"columns":4,"branches":{"left":{"src":"./assets/dog-hd-v4-left.webp","count":27,"unsafe":[7,8,9,10,11,12,13]},"right":{"src":"./assets/dog-hd-v4-right.webp","count":27,"unsafe":[16,17,18,19,20,21,22,23,24]},"up":{"src":"./assets/dog-hd-v4-up.webp","count":32,"unsafe":[]},"down":{"src":"./assets/dog-hd-v4-down.webp","count":20,"unsafe":[]}}}</script>
   <script>
     (function () {
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      /* nav */
-      const nav = document.getElementById('nav');
-      const burger = document.getElementById('burger');
-      const drawer = document.getElementById('drawer');
-      const solid = () => nav.classList.toggle('is-solid', scrollY > 10);
-      solid(); addEventListener('scroll', solid, { passive: true });
-      function setDrawer(open) {
-        drawer.hidden = false;
-        requestAnimationFrame(() => drawer.classList.toggle('is-open', open));
-        burger.setAttribute('aria-expanded', String(open));
-        document.body.style.overflow = open ? 'hidden' : '';
-        if (!open) setTimeout(() => { if (!drawer.classList.contains('is-open')) drawer.hidden = true; }, 220);
-      }
-      burger.addEventListener('click', () => setDrawer(!drawer.classList.contains('is-open')));
-      drawer.addEventListener('click', (e) => { if (e.target === drawer || e.target.closest('a')) setDrawer(false); });
 
       /* pink paw rails */
       (function rails() {
@@ -1053,156 +891,9 @@
         form.reset();
       });
 
-      /* HD head poses on a stationary scene, with smooth four-direction tracking. */
-      (function dogTurn() {
-        const config = JSON.parse(document.getElementById('dog-turn-data').textContent);
-        const canvas = document.getElementById('canvas');
-        const hero = document.getElementById('hero');
-        const poster = hero.querySelector('.hero__poster');
-        const hint = hero.querySelector('.hero__hint');
-        const ctx = canvas.getContext('2d', { alpha: false });
-        const motion = matchMedia('(prefers-reduced-motion: reduce)');
-        const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
-        const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-        const sheets = {};
-        let active = 'left', requested = active, position = 0, target = 0;
-        let ready = false, loading = false, visible = true, raf = 0, previousTime = 0;
-        let scale = 1, left = 0, top = 0, noseX = 0, noseY = 0, lastDrawn = '';
-        let lastPointer = null;
-        document.getElementById('loader')?.classList.add('is-done');
-        if (!ctx) return;
-
-        function allowed() { return !motion.matches && finePointer.matches; }
-        function canAnimate() { return ready && visible && !document.hidden && allowed(); }
-        function pending() { return position !== target || active !== requested; }
-        function schedule() {
-          if (!raf && canAnimate() && pending()) raf = requestAnimationFrame(tick);
-        }
-        function stop() { cancelAnimationFrame(raf); raf = 0; previousTime = 0; }
-        function resize() {
-          const r = hero.getBoundingClientRect();
-          const dpr = Math.min(devicePixelRatio || 1, 2);
-          canvas.width = Math.max(1, Math.round(r.width * dpr));
-          canvas.height = Math.max(1, Math.round(r.height * dpr));
-          scale = Math.max(canvas.width / config.width, canvas.height / config.height);
-          const width = config.width * scale, height = config.height * scale;
-          // Keep the dog clear of the heading on wide screens and centred on phones.
-          const anchor = r.width > 900 ? .68 : .51;
-          left = canvas.width * anchor - config.nose[0] * scale;
-          top = (canvas.height - height) * .12;
-          noseX = (left + config.nose[0] * scale) / dpr;
-          noseY = (top + config.nose[1] * scale) / dpr;
-          Object.assign(poster.style, { width: width / dpr + 'px', height: height / dpr + 'px',
-            left: left / dpr + 'px', top: top / dpr + 'px', objectFit: 'fill' });
-          lastDrawn = '';
-          if (ready) draw();
-          if (lastPointer) aim(lastPointer);
-        }
-        function draw() {
-          const branch = config.branches[active];
-          const index = clamp(Math.round(position * (branch.count - 1)), 0, branch.count - 1);
-          const key = index === 0 ? 'neutral' : active + ':' + index;
-          if (key === lastDrawn) return;
-          ctx.fillStyle = '#120e10'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(poster, left, top, config.width * scale, config.height * scale);
-          if (index > 0) {
-            const [x, y, w, h] = config.patch;
-            ctx.drawImage(sheets[active], index % config.columns * w,
-              Math.floor(index / config.columns) * h, w, h,
-              left + x * scale, top + y * scale, w * scale, h * scale);
-          }
-          canvas.dataset.direction = index === 0 ? 'neutral' : active;
-          canvas.dataset.pose = String(index);
-          lastDrawn = key;
-        }
-        function tick(time) {
-          raf = 0;
-          if (!canAnimate()) { previousTime = 0; return; }
-          const dt = previousTime ? clamp((time - previousTime) / 1000, 0, .04) : 1 / 120;
-          previousTime = time;
-          const goal = active === requested ? target : 0;
-          const distance = goal - position;
-          position += clamp(distance * (1 - Math.exp(-20 * dt)), -4 * dt, 4 * dt);
-          if (Math.abs(goal - position) < .003) position = goal;
-          draw();
-          // Different video branches meet only at their identical frontal frame.
-          if (position === 0 && active !== requested) active = requested;
-          if (pending()) schedule(); else previousTime = 0;
-        }
-        function openEyeTarget(branch, value) {
-          const data = config.branches[branch];
-          let index = Math.round(value * (data.count - 1));
-          if (data.unsafe.includes(index)) {
-            for (let offset = 1; offset < data.count; offset++) {
-              if (index - offset >= 0 && !data.unsafe.includes(index - offset)) { index -= offset; break; }
-              if (index + offset < data.count && !data.unsafe.includes(index + offset)) { index += offset; break; }
-            }
-          }
-          return index / (data.count - 1);
-        }
-        function aim(event) {
-          if (!allowed() || event.pointerType === 'touch') return;
-          const r = hero.getBoundingClientRect();
-          const dx = event.clientX - r.left - noseX, dy = event.clientY - r.top - noseY;
-          const x = clamp(dx / Math.max(80, dx < 0 ? noseX : r.width - noseX), -1, 1);
-          const y = clamp(dy / Math.max(80, dy < 0 ? noseY : r.height - noseY), -1, 1);
-          const horizontal = x < 0 ? 'left' : 'right', vertical = y < 0 ? 'up' : 'down';
-          const ax = Math.abs(x), ay = Math.abs(y);
-          if (Math.max(ax, ay) < .045) { target = 0; schedule(); return; }
-          // Hysteresis keeps diagonal cursor movement from switching axes repeatedly.
-          const wasHorizontal = requested === 'left' || requested === 'right';
-          const useHorizontal = wasHorizontal ? ax * 1.2 >= ay : ax > ay * 1.2;
-          requested = useHorizontal ? horizontal : vertical;
-          const amount = clamp(((useHorizontal ? ax : ay) - .045) / .955, 0, 1);
-          target = openEyeTarget(requested, amount);
-          schedule();
-        }
-        function move(event) {
-          if (event.pointerType === 'touch') return;
-          lastPointer = { clientX: event.clientX, clientY: event.clientY, pointerType: event.pointerType };
-          aim(lastPointer);
-        }
-        function reset() { lastPointer = null; target = 0; schedule(); }
-        function preferencesChanged() {
-          stop(); position = target = 0; requested = active;
-          if (ready) draw();
-          if (hint) hint.hidden = !ready || !allowed();
-          if (allowed()) preload();
-        }
-        async function preload() {
-          if (ready || loading || !allowed()) return;
-          loading = true;
-          try {
-            await poster.decode();
-            await Promise.all(Object.entries(config.branches).map(async ([name, branch]) => {
-              const image = new Image(); image.decoding = 'async'; image.src = branch.src;
-              await image.decode(); sheets[name] = image;
-            }));
-            ready = true; resize(); draw();
-            canvas.classList.add('is-ready');
-            if (hint) hint.hidden = !allowed();
-            if (lastPointer) aim(lastPointer);
-          } catch (_) { stop(); } finally { loading = false; }
-        }
-        hero.addEventListener('pointermove', move, { passive: true });
-        hero.addEventListener('pointerleave', reset, { passive: true });
-        hero.addEventListener('pointerenter', preload, { passive: true });
-        addEventListener('resize', resize, { passive: true });
-        motion.addEventListener('change', preferencesChanged);
-        finePointer.addEventListener('change', preferencesChanged);
-        document.addEventListener('visibilitychange', () => {
-          if (document.hidden) { stop(); reset(); } else schedule();
-        });
-        if ('IntersectionObserver' in window) {
-          new IntersectionObserver(entries => {
-            visible = entries[0].isIntersecting;
-            if (!visible) { stop(); reset(); } else schedule();
-          }).observe(hero);
-        }
-        resize(); if (hint) hint.hidden = true; preload();
-      })();
 
     })();
   </script>
+  <script src="assets/lumi-salon/hero.js?v=1"></script>
 </body>
 </html>
